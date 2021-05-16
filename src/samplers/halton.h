@@ -49,7 +49,7 @@ class HaltonSampler : public GlobalSampler {
   public:
     // HaltonSampler Public Methods
     HaltonSampler(int nsamp, const Bounds2i &sampleBounds,
-                  bool sampleAtCenter = false);
+                  bool sampleAtCenter = false, int seed = 0);
     int64_t GetIndexForSample(int64_t sampleNum) const;
     Float SampleDimension(int64_t index, int dimension) const;
     std::unique_ptr<Sampler> Clone(int seed);
@@ -58,6 +58,7 @@ class HaltonSampler : public GlobalSampler {
     // HaltonSampler Private Data
     static std::vector<uint16_t> radicalInversePermutations;
     Point2i baseScales, baseExponents;
+    int seed;
     int sampleStride;
     int multInverse[2];
     mutable Point2i pixelForOffset = Point2i(std::numeric_limits<int>::max(),

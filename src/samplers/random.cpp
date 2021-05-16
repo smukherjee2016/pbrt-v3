@@ -39,7 +39,7 @@
 
 namespace pbrt {
 
-RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
+RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed), seed(seed) {}
 
 Float RandomSampler::Get1D() {
     ProfilePhase _(Prof::GetSample);
@@ -73,7 +73,8 @@ void RandomSampler::StartPixel(const Point2i &p) {
 
 Sampler *CreateRandomSampler(const ParamSet &params) {
     int ns = params.FindOneInt("pixelsamples", 4);
-    return new RandomSampler(ns);
+    int seed = params.FindOneInt("seed", 0);
+    return new RandomSampler(ns, seed);
 }
 
 }  // namespace pbrt

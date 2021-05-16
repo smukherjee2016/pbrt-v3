@@ -54,6 +54,7 @@ class RandomSampler : public Sampler {
 
   private:
     RNG rng;
+    int seed;
 };
 
 Sampler *CreateRandomSampler(const ParamSet &params);

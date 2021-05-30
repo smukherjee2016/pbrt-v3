@@ -45,9 +45,13 @@ Sampler::~Sampler() {}
 Sampler::Sampler(int64_t samplesPerPixel) : samplesPerPixel(samplesPerPixel) {}
 CameraSample Sampler::GetCameraSample(const Point2i &pRaster) {
     CameraSample cs;
-    cs.pFilm = (Point2f)pRaster + Get2D();
-    cs.time = Get1D();
-    cs.pLens = Get2D();
+    // Disable AA, Motion blur and DoF
+    // PLEASE REVERT THIS FOR REAL WORLD APPLICATIONS
+    //cs.pFilm = (Point2f)pRaster + Get2D();
+    Point2f center_pixel = {0.5, 0.5};
+    cs.pFilm = (Point2f)pRaster + center_pixel;
+    cs.time = 0.0;// Get1D();
+    cs.pLens = {0.5, 0.5}; //Get2D();
     return cs;
 }
 

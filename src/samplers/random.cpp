@@ -55,7 +55,7 @@ Point2f RandomSampler::Get2D() {
 
 std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
     RandomSampler *rs = new RandomSampler(*this);
-    rs->rng.SetSequence(seed);
+    rs->rng.SetSequence(this->seed + seed);
     return std::unique_ptr<Sampler>(rs);
 }
 

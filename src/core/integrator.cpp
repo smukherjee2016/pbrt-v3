@@ -243,10 +243,6 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Allocate _MemoryArena_ for tile
             MemoryArena arena;
 
-            // Get sampler instance for tile
-            int seed = tile.y * nTiles.x + tile.x;
-            std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
-
             // Compute sample bounds for tile
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
@@ -261,9 +257,15 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
+
+                // Get sampler instance for pixel
+                int seed = tile.y * nTiles.x + tile.x + 
+                    pixel.y * (tileBounds.pMax.x - pixelBounds.pMin.x) + pixel.x;
+                std::unique_ptr<Sampler> pixelSampler = sampler->Clone(seed);
+
                 {
                     ProfilePhase pp(Prof::StartPixel);
-                    tileSampler->StartPixel(pixel);
+                    pixelSampler->StartPixel(pixel);
                 }
 
                 // Do this check after the StartPixel() call; this keeps
@@ -276,19 +278,18 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
-                        tileSampler->GetCameraSample(pixel);
+                        pixelSampler->GetCameraSample(pixel);
 
                     // Generate camera ray for current sample
                     RayDifferential ray;
                     Float rayWeight =
                         camera->GenerateRayDifferential(cameraSample, &ray);
-                    ray.ScaleDifferentials(
-                        1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+                    //ray.ScaleDifferentials(1 / std::sqrt((Float)pixelSampler->samplesPerPixel));
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+                    if (rayWeight > 0) L = Li(ray, scene, *pixelSampler, arena);
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -296,21 +297,21 @@ void SamplerIntegrator::Render(const Scene &scene) {
                             "Not-a-number radiance value returned "
                             "for pixel (%d, %d), sample %d. Setting to black.",
                             pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
+                            (int)pixelSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     } else if (L.y() < -1e-5) {
                         LOG(ERROR) << StringPrintf(
                             "Negative luminance value, %f, returned "
                             "for pixel (%d, %d), sample %d. Setting to black.",
                             L.y(), pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
+                            (int)pixelSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     } else if (std::isinf(L.y())) {
                           LOG(ERROR) << StringPrintf(
                             "Infinite luminance value returned "
                             "for pixel (%d, %d), sample %d. Setting to black.",
                             pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
+                            (int)pixelSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     }
                     VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
@@ -322,7 +323,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Free _MemoryArena_ memory from computing image sample
                     // value
                     arena.Reset();
-                } while (tileSampler->StartNextSample());
+                } while (pixelSampler->StartNextSample());
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 
